@@ -1,0 +1,107 @@
+ENVIRONMENT              = "${ENVIRONMENT}"
+AWS_S3_TERRAFORM_BACKEND = "${AWS_S3_TERRAFORM_BACKEND}"
+AWS_USER_DEPLOY          = "${AWS_USER_DEPLOY}"
+AWS_ACCOUNT_ID           = "${AWS_ACCOUNT_ID}"
+AWS_REGION               = "${AWS_REGION}"
+AWS_KMS_DESCRIPTION      = "${AWS_KMS_DESCRIPTION}"
+AWS_PROFILE              = "${AWS_PROFILE}"
+DOMAIN                   = "${DOMAIN}"
+
+###################################################
+### VPC
+###################################################
+VPC_CIDR_BLOCK         = "10.0.0.0/16"
+VPC_INSTANCE_TENACY    = "default"
+DNS_SUPPORT            = true
+DNS_HOST_NAMES         = true
+DESTINATION_CIDR_BLOCK = "0.0.0.0/0"
+CLUSTER_ENDPOINT_PUBLIC_ACCESS_CIDRS = [
+  "52.63.231.178/32",
+  "54.169.195.247/32",
+  "13.230.158.120/32",
+  "13.238.54.232/32",
+  "13.233.76.15/32",
+  "18.194.201.191/32",
+  "52.58.203.252/32",
+  "54.180.75.25/32",
+  "192.30.252.0/22",
+  "13.209.163.61/32",
+  "18.229.199.252/32",
+  "18.179.245.253/32",
+  "13.234.168.60/32",
+  "18.229.119.202/32",
+  "185.199.108.0/22",
+  "54.207.47.76/32",
+  "52.69.239.207/32",
+  "18.195.135.122/32",
+  "140.82.112.0/20",
+  "13.236.14.80/32",
+  "13.250.168.23/32",
+  "13.250.94.254/32"
+]
+
+###################################################
+### PUBLIC SUBNET 1a - us-east-1a
+###################################################
+PUBLIC_SUBNET_CIDER_BLOCK_1A       = "10.0.1.0/24"
+PUBLIC_SUBNET_AVAILABILITY_ZONE_1A = "us-east-1a"
+
+###################################################
+### PUBLIC SUBNET 1b - us-east-1b
+###################################################
+PUBLIC_SUBNET_CIDER_BLOCK_1B       = "10.0.2.0/24"
+PUBLIC_SUBNET_AVAILABILITY_ZONE_1B = "us-east-1b"
+
+###################################################
+### PUBLIC SUBNET 2b - us-east-1b
+###################################################
+PUBLIC_SUBNET_CIDER_BLOCK_2B       = "10.0.3.0/24"
+PUBLIC_SUBNET_AVAILABILITY_ZONE_2B = "us-east-1b"
+
+###################################################
+### PRIVATE SUBNET 1a - us-east-1a
+###################################################
+PRIVATE_SUBNET_CIDER_BLOCK_1A       = "10.0.4.0/24"
+PRIVATE_SUBNET_AVAILABILITY_ZONE_1A = "us-east-1a"
+
+###################################################
+### PRIVATE SUBNET 1b - us-east-1a
+###################################################
+PRIVATE_SUBNET_CIDER_BLOCK_1B       = "10.0.5.0/24"
+PRIVATE_SUBNET_AVAILABILITY_ZONE_1B = "us-east-1b"
+
+###################################################
+### PRIVATE SUBNET 2b - us-east-1b
+###################################################
+PRIVATE_SUBNET_CIDER_BLOCK_2B       = "10.0.6.0/24"
+PRIVATE_SUBNET_AVAILABILITY_ZONE_2B = "us-east-1b"
+
+###################################################
+### EKS CLUSTER
+###################################################
+CLUSTER_NAME = "eks-cluster"
+K8S_VERSION  = "1.16"
+
+NODES_INSTANCES_SIZES = [
+  "t3.large"
+]
+
+AUTO_SCALE_OPTIONS = {
+  min     = 2
+  max     = 10
+  desired = 2
+}
+
+AUTO_SCALE_CPU = {
+  scale_up_threshold  = 80
+  scale_up_period     = 60
+  scale_up_evaluation = 2
+  scale_up_cooldown   = 300
+  scale_up_add        = 2
+
+  scale_down_threshold  = 40
+  scale_down_period     = 120
+  scale_down_evaluation = 2
+  scale_down_cooldown   = 300
+  scale_down_remove     = -1
+}

@@ -1,0 +1,8 @@
+terraform {
+  backend "s3" {
+    bucket  = "${AWS_S3_TERRAFORM_BACKEND}.${AWS_REGION}.${AWS_ACCOUNT_ID}"
+    key     = "self/terraform.tfstate"
+    region  = "${AWS_REGION}"
+    profile = "${AWS_PROFILE}"
+  }
+}

@@ -1,0 +1,11 @@
+version: 3
+projects:
+  - dir: .
+    workflow: custom
+workflows:
+  custom:
+    plan:
+      steps:
+        - init:
+            extra_args: [-backend-config=bucket=${AWS_S3_TERRAFORM_BACKEND}.${AWS_REGION}.${AWS_ACCOUNT_ID}, -backend-config=key=self/terraform.tfstate, -backend-config=region=${AWS_REGION}]
+        - plan

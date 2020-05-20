@@ -1,0 +1,86 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: hello-app
+  labels:
+    k8s-app: hello-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      k8s-app: hello-app
+  template:
+    metadata:
+      labels:
+        k8s-app: hello-app
+        name: hello-app
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - image: gcr.io/google-samples/hello-app:1.0
+        name: hello-app
+        ports:
+        - name: http
+          containerPort: 8080
+        resources:
+          requests:
+            cpu: "256m"
+            memory: "512m" 
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: hello-app
+spec:
+  selector:
+    k8s-app: hello-app
+  ports:
+    - protocol: TCP
+      port: 8080
+      name: hello-app
+  type: ClusterIP
+
+---
+kind: Ingress
+apiVersion: extensions/v1beta1
+metadata:
+  name: hello-app-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+    - braga-sre.tk
+    secretName: tls-secret
+  rules:
+  - host: braga-sre.tk
+    http:
+      paths:
+        - path: /hello-app
+          backend:
+            serviceName: hello-app
+            servicePort: 8080
+
+---
+kind: HorizontalPodAutoscaler
+apiVersion: autoscaling/v2beta2
+metadata:
+  name: hello-app
+spec:
+  maxReplicas: 5
+  minReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 30
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: hello-app

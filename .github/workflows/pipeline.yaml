@@ -1,0 +1,114 @@
+name: 'Pipeline'
+
+on:
+  push:
+    branches:
+      - dev
+      - qa
+      - master
+
+env:
+  ENVIRONMENT: ${{ github.event.repository.default_branch }}
+  GH_USER_CI: ${{ secrets.GH_USER_CI }}
+  GH_USER_CI_PAT: ${{ secrets.GH_USER_CI_PAT }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_S3_TERRAFORM_BACKEND: ${{ secrets.AWS_S3_TERRAFORM_BACKEND }}
+  AWS_USER_DEPLOY: ${{ secrets.AWS_USER_DEPLOY }}
+  AWS_KMS_DESCRIPTION: ${{ secrets.AWS_KMS_DESCRIPTION }}
+  DOMAIN: ${{ secrets.DOMAIN }}
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: Docker Login
+        run: echo "${GH_USER_CI_PAT}" | docker login docker.pkg.github.com --username ${GH_USER_CI} --password-stdin
+
+      - name: Prepare project.tfvars
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          envsubst < ./config/templates/default.tfvars.template > project.tfvars
+
+      - name: make project
+        id: make-default
+        if: contains(github.event.head_commit.message, '[[ make default ]]')
+        run: echo '::set-env name=COMMAND::make default'
+
+      - name: make init
+        id: make-init
+        if: contains(github.event.head_commit.message, '[[ make init ]]')
+        run: echo '::set-env name=COMMAND::make init'
+
+      - name: make validate
+        id: make-validate
+        if: contains(github.event.head_commit.message, '[[ make validate ]]')
+        run: echo '::set-env name=COMMAND::make validate'
+
+      - name: make plan
+        id: make-plan
+        if: contains(github.event.head_commit.message, '[[ make plan ]]')
+        run: echo '::set-env name=COMMAND::make plan'
+
+      - name: make refresh
+        id: make-refresh
+        if: contains(github.event.head_commit.message, '[[ make refresh ]]')
+        run: echo '::set-env name=COMMAND::make refresh'
+
+      - name: make destroy
+        id: make-destroy
+        if: contains(github.event.head_commit.message, '[[ make destroy ]]')
+        run: echo '::set-env name=COMMAND::make destroy'
+
+      - name: make prepare-backend
+        id: make-prepare-backend
+        if: contains(github.event.head_commit.message, '[[ make prepare-backend ]]')
+        run: echo '::set-env name=COMMAND::make prepare-backend'
+
+      - name: make prepare-k8s
+        id: make-prepare-k8s
+        if: contains(github.event.head_commit.message, '[[ make prepare-k8s ]]')
+        run: echo '::set-env name=COMMAND::make prepare-k8s'  
+
+      - name: Deploy Cluster EKS
+        if: contains(github.event.head_commit.message, '[[ make ')
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          chmod +x -R .
+          docker run \
+            -e GITHUB_TOKEN=${GH_USER_CI_PAT} \
+            -e AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID} \
+            -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+            -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+            -e AWS_PROFILE=${AWS_PROFILE} \
+            -e AWS_REGION=${AWS_REGION} \
+            -e ENVIRONMENT=${ENVIRONMENT} \
+            -e AWS_S3_TERRAFORM_BACKEND=${AWS_S3_TERRAFORM_BACKEND} \
+            -e AWS_USER_DEPLOY=${AWS_USER_DEPLOY} \
+            -e AWS_KMS_DESCRIPTION=${AWS_KMS_DESCRIPTION} \
+            -e DOMAIN=${DOMAIN} \
+            -e ENVIRONMENT=${ENVIRONMENT} \
+            -v ${GITHUB_WORKSPACE}:/workspace \
+            docker.pkg.github.com/bragadevops/terraform-eks-ci/terraform-eks-ci:latest \
+            $(echo ${COMMAND})
+
+      - name: After Deploy
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          git config user.email "terraformdeploy@email.com"
+          git config user.name "TerraformDeploy"
+          if [[ $(git status --porcelain) ]]; 
+          then 
+            git add .
+            git commit -m "Automatic Commit by GitHub Actions."
+            git push origin ${ENVIRONMENT}
+          fi

@@ -1,1 +1,0 @@
-# poc_terraform_aws_eks
